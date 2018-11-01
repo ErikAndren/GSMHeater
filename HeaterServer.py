@@ -32,8 +32,13 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    #msg_json = json.loads(str(msg.payload))
     print ("Got: " + msg.payload)
+    if msg.payload == "ON":
+        print("Send message to heater to turn on")
+        conn.sendall("1");
+    if msg.payload == "OFF":
+        print("Send message to heater to turn off")
+        conn.sendall("0");
 
 client = mqtt.Client()
 client.on_connect = on_connect
@@ -59,12 +64,13 @@ def clientthread(conn):
         if not data:
             break
 
-        conn.sendall(reply)
+        # conn.sendall(reply)
     #came out of loop
     conn.close()
 
 #now keep talking with the client
 while 1:
+    global conn
     # wait to accept a connection - blocking call
     conn, addr = s.accept()
     print 'Connected with ' + addr[0] + ':' + str(addr[1])
