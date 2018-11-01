@@ -8,11 +8,14 @@ import socket
 import sys
 from thread import *
 
+from threading import Timer
+
 HOST = ''
 PORT = 6666
 
 topic = "GSMHeater/ctrl"
 available_topic = "GSMHeater/available"
+heartbeat_interval = 5.0
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
@@ -52,19 +55,28 @@ client.connect("phobos", 1883, 60)
 # manual interface.
 client.loop_start()
 
+def conn_timeout():
+    print ('No heartbeat received, setting heater availability to offline')
+    client.publish(available_topic, 'offline')
+
 def clientthread(conn):
     #Sending message to connected client
     conn.send('Welcome to the server. Type something and hit enter\n') #send only takes string
 
+    t = Timer(heartbeat_interval, conn_timeout)
     #infinite loop so that function do not terminate and thread do not end.
     while True:
         #Receiving from client
         data = conn.recv(1024)
-        
+        # t = Timer(heartbeat_interval, conn_timeout)
+
         if data == "H\n":
+            print ('Starting timeout timer')
+            t.cancel();
+            t = Timer(heartbeat_interval, conn_timeout)
             client.publish(available_topic, 'online')
-        else:
-            client.publish(available_topic, 'offline')
+            t.start()
+
         if not data:
             break
         
