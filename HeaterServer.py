@@ -60,10 +60,15 @@ def clientthread(conn):
     while True:
         #Receiving from client
         data = conn.recv(1024)
-        reply = 'OK...' + data
+        
+        if data == "H\n":
+            client.publish(available_topic, 'online')
+        else:
+            client.publish(available_topic, 'offline')
         if not data:
             break
-
+        
+        
         # conn.sendall(reply)
     #came out of loop
     conn.close()
