@@ -4,8 +4,25 @@ import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
 import json
 
+import socket
+import sys
+from thread import *
+
+HOST = ''
+PORT = 6666
+
 topic = "GSMHeater/ctrl"
 available_topic = "GSMHeater/available"
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+    s.bind((HOST, PORT))
+except:
+    print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
+    sys.exit()
+print ('Bound to socket')
+
+s.listen(1)
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -16,7 +33,7 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     #msg_json = json.loads(str(msg.payload))
-    #print ("Got: " + msg.payload)
+    print ("Got: " + msg.payload)
 
 client = mqtt.Client()
 client.on_connect = on_connect
@@ -28,4 +45,31 @@ client.connect("phobos", 1883, 60)
 # handles reconnecting.
 # Other loop*() functions are available that give a threaded interface and a
 # manual interface.
-client.loop_forever()
+client.loop_start()
+
+def clientthread(conn):
+    #Sending message to connected client
+    conn.send('Welcome to the server. Type something and hit enter\n') #send only takes string
+
+    #infinite loop so that function do not terminate and thread do not end.
+    while True:
+        #Receiving from client
+        data = conn.recv(1024)
+        reply = 'OK...' + data
+        if not data:
+            break
+
+        conn.sendall(reply)
+    #came out of loop
+    conn.close()
+
+#now keep talking with the client
+while 1:
+    # wait to accept a connection - blocking call
+    conn, addr = s.accept()
+    print 'Connected with ' + addr[0] + ':' + str(addr[1])
+
+    #start new thread takes 1st argument as a function name to be run, second is the tuple of arguments to the function.
+    start_new_thread(clientthread ,(conn,))
+
+s.close()
