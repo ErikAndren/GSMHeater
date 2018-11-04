@@ -1,67 +1,113 @@
+
+
+#define TINY_GSM_MODEM_SIM900
+
+#include <TinyGsmClient.h>
+
+// Set serial for debug console (to the Serial Monitor, default speed 115200)
+#define SerialMon Serial
+
+// Use Hardware Serial on Mega, Leonardo, Micro
+//#define SerialAT Serial1
+
+// or Software Serial on Uno, Nano
 #include <SoftwareSerial.h>
+SoftwareSerial SerialAT(7, 8); // RX, TX
 
-SoftwareSerial SIM900(7, 8);
 
-char incoming_char = 0;
+// Your GPRS credentials
+// Leave empty, if missing user or pass
+const char apn[]  = "4g.tele2.se";
+const char user[] = "";
+const char pass[] = "";
 
-const String CHECK_NETWORK = "AT+CREG?\r\n";
-const String NETWORK_CONNECTED = "+CREG: 0,1\r\n";
+TinyGsm modem(SerialAT);
+TinyGsmClient client(modem);
+
+#define LED_PIN 13
+int ledStatus = LOW;
+
+long lastReconnectAttempt = 0;
+
+const char server[] = "home.zachrisson.info";
+int port = 6666;
+
+void(* resetFunc) (void) = 0; //declare reset function @ address 0
 
 void setup() {
-  SIM900.begin(19200);
-  Serial.begin(19200);
+  pinMode(LED_PIN, OUTPUT);
+
+  // Set console baud rate
+  SerialMon.begin(19200);
   
-  waitForNetwork();
-}
+  // Set GSM module baud rate
+  SerialAT.begin(19200);
+  delay(3000);
 
-int readSIM900UART(boolean echo) {
-  if (SIM900.available()) {
-      //Get the character from the cellular serial port
-      incoming_char = SIM900.read(); 
-      if (echo) {
-        Serial.print(incoming_char);
-      }
-      return incoming_char;
+  // Restart takes quite some time
+  // To skip it, call init() instead of restart()
+  SerialMon.println("Initializing modem...");
+  modem.restart();
+
+  String modemInfo = modem.getModemInfo();
+  SerialMon.print("Modem: ");
+  SerialMon.println(modemInfo);
+
+  SerialMon.print("Waiting for network...");
+  if (!modem.waitForNetwork()) {
+    SerialMon.println(" fail");
+    resetFunc();
   }
-  return -1;
+  SerialMon.println(" OK");
+
+  SerialMon.print("Connecting to ");
+  SerialMon.print(apn);
+  if (!modem.gprsConnect(apn, user, pass)) {
+    SerialMon.println(" fail");
+    resetFunc();
+  }
+  SerialMon.println(" OK");
 }
 
-void writeSIM900UART(byte val) { 
-}
+unsigned long timeout;
+unsigned char relay_state = '0';
 
+#define TIMEOUT_MS 10000L
 void loop() {
-  readSIM900UART(true);
-  
-  if (Serial.available()) {
-      incoming_char = Serial.read();
-      SIM900.write(incoming_char);
-    }
-}
+  if (client.connected() == false) {
+    if (!client.connect(server, port)) {
+      SerialMon.println("Failed to connect to server, rebooting");
+      resetFunc();
+    } else {
+      SerialMon.println("Connected to server");
 
-void waitForNetwork() {
-  String result = "";
-  
-  SIM900.print(CHECK_NETWORK);
-  Serial.println("");
-  while (true) {
-    if (readSIM900UART(false) >= 0) {
-      result += incoming_char;
-
-      if (incoming_char == '\n') {        
-        if (result.compareTo(NETWORK_CONNECTED) == 0) {
-          Serial.println("Connected to network");
-          return;
-        } else if (result.compareTo(CHECK_NETWORK) == 0) { 
-          result = "";
-        } else if (result.compareTo("\r\n") == 0) {
-          result = "";
-        } else {
-          result = "";
-          delay(1000);
-          SIM900.print(CHECK_NETWORK);
-        }
-      }
     }
   }
+
+  // Wait for remote command
+  timeout = millis();
+  while (client.connected() && millis() - timeout < TIMEOUT_MS) {
+    // Print available data
+    while (client.available()) {
+      char c = client.read();
+      if (c == '1') {
+        SerialMon.println("Turning on relay");
+        relay_state = '1';
+      } else if (c == '0') {
+        SerialMon.println("Turning off relay");
+        relay_state = '0';
+      }
+      SerialMon.print(c);
+      
+      timeout = millis();
+    }
+  }
+
+  // Send heartbeat
+  if (client.connected()) {
+    SerialMon.println("Sending heartbeat");
+    client.println(relay_state);
+  }
 }
+
 
