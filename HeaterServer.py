@@ -64,7 +64,7 @@ def clientthread(conn):
         #Receiving from client
         data = conn.recv(1024)
 
-        if data == "1\n" or data == "0\n":
+        if data[0] == "1" or data[0] == "0":
             # FIXME: Later we can use this to inform our switch trigger what the current state is
             print ('Starting timeout timer')
             t.cancel();
