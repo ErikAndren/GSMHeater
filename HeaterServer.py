@@ -62,7 +62,11 @@ def clientthread(conn):
     #infinite loop so that function do not terminate and thread do not end.
     while True:
         #Receiving from client
-        data = conn.recv(1024)
+        try: 
+            data = conn.recv(1024)
+        except e:
+            print 'Exception while waiting for data: ' + e
+            return
 
         if not data:
             return
