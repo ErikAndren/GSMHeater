@@ -15,13 +15,13 @@ PORT = 6666
 
 topic = "GSMHeater/ctrl"
 available_topic = "GSMHeater/available"
-heartbeat_interval = 5.0
+heartbeat_interval = 20.0
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
     s.bind((HOST, PORT))
 except:
-    print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
+    print 'Bind failed'
     sys.exit()
 
 s.listen(1)
@@ -71,6 +71,8 @@ def clientthread(conn):
             t = Timer(heartbeat_interval, conn_timeout)
             client.publish(available_topic, 'online')
             t.start()
+        else:
+            print ('Got: ' + data)
 
 #now keep talking with the client
 while True:
