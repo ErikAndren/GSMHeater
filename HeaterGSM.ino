@@ -37,6 +37,7 @@ void(* resetFunc) (void) = 0; //declare reset function @ address 0
 void setup() {
   pinMode(LED_PIN, OUTPUT);
 
+  // Turn on GPRS Shield
   digitalWrite(9, HIGH);
   delay(1000);
   digitalWrite(9, LOW);
