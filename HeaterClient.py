@@ -1,12 +1,28 @@
 #!/usr/bin/env python
 
 import socket
+import signal
+import sys
 from threading import Timer, Thread, Event
 
 heartbeat_interval_s = 20.0
 max_active_s = 60
 
 relay_state = '0';
+
+stopFlag = Event()
+stopFlag2 = Event()
+
+# create an ipv4 (AF_INET) socket object using the tcp protocol (SOCK_STREAM)
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+def signal_handler(signum, frame):
+    stopFlag.set()
+    stopFlag2.set()
+    client.close()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 class heartbeat_timer(Thread):
     def __init__(self, event):
@@ -33,17 +49,13 @@ class deactivate_relay_timer(Thread):
             relay_state = '0'
             stopFlag2.set()
 
-# create an ipv4 (AF_INET) socket object using the tcp protocol (SOCK_STREAM)
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # connect the client
 client.connect(('home.zachrisson.info', 6666))
 
-stopFlag = Event()
 t = heartbeat_timer(stopFlag)
 t.start()
 
-stopFlag2 = Event()
 t2 = deactivate_relay_timer(stopFlag2)
 
 client.send(relay_state)
