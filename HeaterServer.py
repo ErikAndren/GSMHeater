@@ -15,7 +15,7 @@ PORT = 6666
 
 topic = "GSMHeater/ctrl"
 available_topic = "GSMHeater/available"
-heartbeat_interval = 20.0
+heartbeat_interval = 65.0
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
