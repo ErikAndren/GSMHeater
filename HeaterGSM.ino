@@ -62,6 +62,8 @@ void setup() {
   SerialMon.print("Waiting for network...");
   if (!modem.waitForNetwork()) {
     SerialMon.println(" fail");
+    delay(1000);
+
     resetFunc();
   }
   SerialMon.println(" OK");
@@ -70,6 +72,8 @@ void setup() {
   SerialMon.print(apn);
   if (!modem.gprsConnect(apn, user, pass)) {
     SerialMon.println(" fail");
+    delay(1000);
+
     resetFunc();
   }
   SerialMon.println(" OK");
@@ -83,6 +87,7 @@ void loop() {
   if (client.connected() == false) {
     if (!client.connect(server, port)) {
       SerialMon.println("Failed to connect to server, rebooting");
+      delay(1000);
       resetFunc();
     } else {
       SerialMon.println("Connected to server");
