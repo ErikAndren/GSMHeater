@@ -37,6 +37,11 @@ void(* resetFunc) (void) = 0; //declare reset function @ address 0
 void setup() {
   pinMode(LED_PIN, OUTPUT);
 
+  digitalWrite(9, HIGH);
+  delay(1000);
+  digitalWrite(9, LOW);
+  delay(5000);
+
   // Set console baud rate
   SerialMon.begin(19200);
   
@@ -80,7 +85,6 @@ void loop() {
       resetFunc();
     } else {
       SerialMon.println("Connected to server");
-
     }
   }
 
