@@ -56,7 +56,7 @@ def conn_timeout():
 
 def clientthread(conn):
     #Sending message to connected client
-    conn.send('Welcome\n') #send only takes string
+    # conn.send('Welcome\n') #send only takes string
 
     t = Timer(heartbeat_interval, conn_timeout)
     #infinite loop so that function do not terminate and thread do not end.
@@ -78,8 +78,6 @@ def clientthread(conn):
             t = Timer(heartbeat_interval, conn_timeout)
             client.publish(available_topic, 'online')
             t.start()
-        else:
-            print ('Got: ' + data)
 
 #now keep talking with the client
 while True:
