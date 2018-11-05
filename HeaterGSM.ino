@@ -6,10 +6,14 @@
 #define GPRS_SHIELD_POWER_PIN 9
 #define LED_PIN 13
 #define HEARTBEAT_MS 10000L
+#define MAX_RELAY_TIME_ON_MS 7200000L
+//#define MAX_RELAY_TIME_ON_MS 30000L
+#define MAX_RELAY_TIME_HEARTBEAT_TICKS (MAX_RELAY_TIME_ON_MS / HEARTBEAT_MS)
 
 #include <TinyGsmClient.h>
 
 unsigned long timeout;
+unsigned int max_relay_time_on_ticks;
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
@@ -26,9 +30,6 @@ const char pass[] = "";
 
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
-
-int ledStatus = LOW;
-long lastReconnectAttempt = 0;
 
 const char server[] = "home.zachrisson.info";
 const int port = 6666;
@@ -105,10 +106,20 @@ void loop() {
     }
   }
 
-    // Send heartbeat
+  // Send heartbeat
   if (client.connected()) {
-    SerialMon.println("Sending heartbeat");
+    SerialMon.print("Sending heartbeat: ");
+    SerialMon.println(digitalRead(RELAY_PIN));
+    
     client.println(digitalRead(RELAY_PIN));
+
+    if (max_relay_time_on_ticks > 0) {
+      max_relay_time_on_ticks--;
+      if (max_relay_time_on_ticks == 0) {
+        SerialMon.println("Max timeout, turning off relay");
+        digitalWrite(RELAY_PIN, LOW);
+      }
+    }
   }
 
   // Wait for remote command
@@ -120,6 +131,7 @@ void loop() {
       if (c == '1') {
         SerialMon.println("Turning on relay");
         digitalWrite(RELAY_PIN, HIGH);
+        max_relay_time_on_ticks = MAX_RELAY_TIME_HEARTBEAT_TICKS;
       } else if (c == '0') {
         SerialMon.println("Turning off relay");
         digitalWrite(RELAY_PIN, LOW);
