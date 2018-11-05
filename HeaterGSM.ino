@@ -105,6 +105,12 @@ void loop() {
     }
   }
 
+    // Send heartbeat
+  if (client.connected()) {
+    SerialMon.println("Sending heartbeat");
+    client.println(digitalRead(RELAY_PIN));
+  }
+
   // Wait for remote command
   timeout = millis();
   while (client.connected() && millis() - timeout < HEARTBEAT_MS) {
@@ -122,12 +128,6 @@ void loop() {
       
       timeout = millis();
     }
-  }
-
-  // Send heartbeat
-  if (client.connected()) {
-    SerialMon.println("Sending heartbeat");
-    client.println(digitalRead(RELAY_PIN));
   }
 }
 
