@@ -1,11 +1,15 @@
 
 
 #define TINY_GSM_MODEM_SIM900
+
+#define RELAY_PIN 2
 #define GPRS_SHIELD_POWER_PIN 9
 #define LED_PIN 13
-
+#define HEARTBEAT_MS 10000L
 
 #include <TinyGsmClient.h>
+
+unsigned long timeout;
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
@@ -46,7 +50,10 @@ void gprsPowerDown(void) {
 void setup() {
   pinMode(LED_PIN, OUTPUT);
   pinMode(GPRS_SHIELD_POWER_PIN, OUTPUT); 
+  pinMode(RELAY_PIN, OUTPUT);
 
+  digitalWrite(RELAY_PIN, LOW);
+  
   // Set console baud rate
   SerialMon.begin(19200);
 
@@ -87,10 +94,6 @@ void setup() {
   SerialMon.println(" OK");
 }
 
-unsigned long timeout;
-unsigned char relay_state = '0';
-
-#define TIMEOUT_MS 10000L
 void loop() {
   if (client.connected() == false) {
     if (!client.connect(server, port)) {
@@ -104,16 +107,16 @@ void loop() {
 
   // Wait for remote command
   timeout = millis();
-  while (client.connected() && millis() - timeout < TIMEOUT_MS) {
+  while (client.connected() && millis() - timeout < HEARTBEAT_MS) {
     // Print available data
     while (client.available()) {
       char c = client.read();
       if (c == '1') {
         SerialMon.println("Turning on relay");
-        relay_state = '1';
+        digitalWrite(RELAY_PIN, HIGH);
       } else if (c == '0') {
         SerialMon.println("Turning off relay");
-        relay_state = '0';
+        digitalWrite(RELAY_PIN, LOW);
       }
       SerialMon.print(c);
       
@@ -124,7 +127,7 @@ void loop() {
   // Send heartbeat
   if (client.connected()) {
     SerialMon.println("Sending heartbeat");
-    client.println(relay_state);
+    client.println(digitalRead(RELAY_PIN));
   }
 }
 
