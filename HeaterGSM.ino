@@ -1,19 +1,18 @@
 
 
 #define TINY_GSM_MODEM_SIM900
+#define GPRS_SHIELD_POWER_PIN 9
+#define LED_PIN 13
+
 
 #include <TinyGsmClient.h>
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
-// Use Hardware Serial on Mega, Leonardo, Micro
-//#define SerialAT Serial1
-
 // or Software Serial on Uno, Nano
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(7, 8); // RX, TX
-
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
@@ -24,34 +23,43 @@ const char pass[] = "";
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
 
-#define LED_PIN 13
 int ledStatus = LOW;
-
 long lastReconnectAttempt = 0;
 
 const char server[] = "home.zachrisson.info";
-int port = 6666;
+const int port = 6666;
 
 void(* resetFunc) (void) = 0; //declare reset function @ address 0
 
+void gprsPowerUp(void) {
+  digitalWrite(GPRS_SHIELD_POWER_PIN, HIGH);
+  delay(1000);
+  digitalWrite(GPRS_SHIELD_POWER_PIN, LOW);
+  delay(5000);
+}
+
+void gprsPowerDown(void) {
+    modem.poweroff();
+    delay(5000);
+}
+
 void setup() {
   pinMode(LED_PIN, OUTPUT);
-
-  // Turn on GPRS Shield
-  digitalWrite(9, HIGH);
-  delay(1000);
-  digitalWrite(9, LOW);
-  delay(5000);
+  pinMode(GPRS_SHIELD_POWER_PIN, OUTPUT); 
 
   // Set console baud rate
   SerialMon.begin(19200);
-  
+
   // Set GSM module baud rate
   SerialAT.begin(19200);
-  delay(3000);
+
+  SerialMon.println("\nInitializing GPRS Shield...");
+  gprsPowerDown();
+  /* Must have shorted R13 on board to make this work */
+  gprsPowerUp();    
 
   // Restart takes quite some time
-  // To skip it, call init() instead of restart()
+  // FIXME: To skip it, call init() instead of restart()
   SerialMon.println("Initializing modem...");
   modem.restart();
 
