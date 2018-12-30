@@ -1,11 +1,12 @@
-
-
 #define TINY_GSM_MODEM_SIM900
 
 #define RELAY_PIN 2
 #define GPRS_SHIELD_POWER_PIN 9
 #define LED_PIN 13
-#define HEARTBEAT_MS 10000L
+// Heartbeat every minute
+#define HEARTBEAT_MS 60000L
+
+// 120 minutes
 #define MAX_RELAY_TIME_ON_MS 7200000L
 //#define MAX_RELAY_TIME_ON_MS 30000L
 #define MAX_RELAY_TIME_HEARTBEAT_TICKS (MAX_RELAY_TIME_ON_MS / HEARTBEAT_MS)
@@ -14,6 +15,7 @@
 
 unsigned long timeout;
 unsigned int max_relay_time_on_ticks;
+unsigned int heartbeat_cnt = 0;
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
@@ -23,8 +25,7 @@ unsigned int max_relay_time_on_ticks;
 SoftwareSerial SerialAT(7, 8); // RX, TX
 
 // Your GPRS credentials
-// Leave empty, if missing user or pass
-const char apn[]  = "4g.tele2.se";
+const char apn[] = "4g.tele2.se";
 const char user[] = "";
 const char pass[] = "";
 
@@ -44,8 +45,8 @@ void gprsPowerUp(void) {
 }
 
 void gprsPowerDown(void) {
-    modem.poweroff();
-    delay(5000);
+  modem.poweroff();
+  delay(5000);
 }
 
 void setup() {
@@ -72,8 +73,8 @@ void setup() {
   modem.restart();
 
   String modemInfo = modem.getModemInfo();
-  SerialMon.print("Modem: ");
-  SerialMon.println(modemInfo);
+
+  SerialMon.println("Modem: " + modemInfo);
 
   SerialMon.print("Waiting for network...");
   if (!modem.waitForNetwork()) {
@@ -108,9 +109,12 @@ void loop() {
 
   // Send heartbeat
   if (client.connected()) {
-    SerialMon.print("Sending heartbeat: ");
+    SerialMon.print("Sending heartbeat ");
+    SerialMon.print(heartbeat_cnt);
+    SerialMon.print(": ");
     SerialMon.println(digitalRead(RELAY_PIN));
-    
+    heartbeat_cnt++;
+
     client.println(digitalRead(RELAY_PIN));
 
     if (max_relay_time_on_ticks > 0) {
@@ -135,9 +139,7 @@ void loop() {
       } else if (c == '0') {
         SerialMon.println("Turning off relay");
         digitalWrite(RELAY_PIN, LOW);
-      }
-      SerialMon.print(c);
-      
+      }      
       timeout = millis();
     }
   }
