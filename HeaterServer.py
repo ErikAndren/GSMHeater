@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
@@ -8,7 +8,7 @@ import socket
 import sys
 
 import argparse
-from thread import *
+import _thread
 
 from threading import Timer
 
@@ -61,17 +61,17 @@ def conn_timeout():
     print ('No heartbeat received within window of ', args.heartbeat_interval, ', setting heater availability to offline')
     client.publish(available_topic, 'offline')
 
-def clientthread(conn):
+def client_thread(conn):
     #Sending message to connected client
-    # conn.send('Welcome\n') #send only takes string
+    #conn.send(b'Welcome\n') #send only takes string
 
     t = Timer(heartbeat_interval, conn_timeout)
-    #infinite loop so that function do not terminate and thread do not end.
+    # infinite loop so that function do not terminate and thread do not end.
     while True:
         # Receiving from client
         try: 
             data = conn.recv(1024)
-        except Exception, e:
+        except Exception as e:
             print('Exception while waiting for data: ', e)
             return
 
@@ -79,22 +79,30 @@ def clientthread(conn):
             print('Did not receive any data. Terminating thread')
             return
 
-        if data[0] == '1' or data[0] == '0':
+        data_str = data.decode('utf-8')
+        if data_str[0] == '1' or data_str[0] == '0':
             # FIXME: Later we can use this to inform our switch trigger what the current state is
             print ('Starting timeout timer')
             t.cancel();
             t = Timer(args.heartbeat_interval, conn_timeout)
             client.publish(available_topic, 'online')
             t.start()
+        else:
+            print(data)
 
 #now keep talking with the client
 while True:
     global conn
     # Wait to accept a connection - blocking call
+
+    print('Waiting for connection')
     conn, addr = s.accept()
     print('Connected with ', addr[0], ':', addr[1])
 
     # Start new thread takes 1st argument as a function name to be run, second is the tuple of arguments to the function.
-    start_new_thread(clientthread ,(conn,))
+    try:
+        _thread.start_new_thread(client_thread, (conn,))
+    except Exception as e:
+        print('Failed to start new thread: ', e)
 
 s.close()
