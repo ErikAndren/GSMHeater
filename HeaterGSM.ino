@@ -3,19 +3,15 @@
 #define RELAY_PIN 2
 #define GPRS_SHIELD_POWER_PIN 9
 #define LED_PIN 13
+
 // Heartbeat every minute
 #define HEARTBEAT_MS 60000L
 
 // 120 minutes
 #define MAX_RELAY_TIME_ON_MS 7200000L
-//#define MAX_RELAY_TIME_ON_MS 30000L
 #define MAX_RELAY_TIME_HEARTBEAT_TICKS (MAX_RELAY_TIME_ON_MS / HEARTBEAT_MS)
 
 #include <TinyGsmClient.h>
-
-unsigned long timeout;
-unsigned int max_relay_time_on_ticks;
-unsigned int heartbeat_cnt = 0;
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
@@ -29,11 +25,15 @@ const char apn[] = "4g.tele2.se";
 const char user[] = "";
 const char pass[] = "";
 
-TinyGsm modem(SerialAT);
-TinyGsmClient client(modem);
+unsigned long timeout;
+unsigned int max_relay_time_on_ticks;
+unsigned int heartbeat_cnt = 0;
 
 const char server[] = "home.zachrisson.info";
 const int port = 6666;
+
+TinyGsm modem(SerialAT);
+TinyGsmClient client(modem);
 
 void(* resetFunc) (void) = 0; //declare reset function @ address 0
 
@@ -144,5 +144,4 @@ void loop() {
     }
   }
 }
-
 
