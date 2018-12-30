@@ -64,7 +64,7 @@ def clientthread(conn):
         #Receiving from client
         try: 
             data = conn.recv(1024)
-        except e:
+        except Exception, e:
             print 'Exception while waiting for data: ' + e
             return
 
