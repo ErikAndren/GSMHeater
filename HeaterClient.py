@@ -62,7 +62,8 @@ client.send(relay_state)
 while True:
     response = client.recv(1024)
     if not response:
-        continue
+        print 'Got response without data'
+        break
 
     if response[0] == '0':
         relay_state = '0'
@@ -73,3 +74,5 @@ while True:
         t2.start()
     else:
         print response
+
+client.close()
