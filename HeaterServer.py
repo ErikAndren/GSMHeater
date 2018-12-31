@@ -14,6 +14,7 @@ from threading import Timer
 
 topic = "GSMHeater/ctrl"
 available_topic = "GSMHeater/available"
+state_topic = "GSMHeater/state"
 heartbeat_interval = 65.0
 
 parser = argparse.ArgumentParser(description = 'Control server')
@@ -42,13 +43,15 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    # FIXME: Just send 1 or 0 as MQTT payload to simplify this
-    if msg.payload == "ON":
+    print('Got mqtt message: ', msg.payload)
+    
+    payload = msg.payload.decode('utf-8')
+    if payload == "ON":
         print('Received MQTT message to turn on heater')
-        conn.sendall('1');
-    if msg.payload == "OFF":
+        conn.sendall(b'1');
+    if payload == "OFF":
         print('Received MQTT message to turn off heater')
-        conn.sendall('0');
+        conn.sendall(b'0');
 
 # Connect to mqtt server
 client = mqtt.Client()
@@ -85,6 +88,7 @@ def client_thread(conn):
             print ('Starting timeout timer')
             t.cancel();
             t = Timer(args.heartbeat_interval, conn_timeout)
+            client.publish(state_topic, data_str)
             client.publish(available_topic, 'online')
             t.start()
         else:
