@@ -53,7 +53,7 @@ void gprsPowerDown(void) {
 }
 
 void setup() {
-  pinMode(LED_PIN, OUTPUT);
+  //pinMode(LED_PIN, OUTPUT);
   pinMode(GPRS_SHIELD_POWER_PIN, OUTPUT); 
   pinMode(RELAY_PIN, OUTPUT);
 
@@ -74,8 +74,10 @@ void setup() {
   // Restart takes quite some time
   // FIXME: To skip it, call init() instead of restart()
   SerialMon.print("Initializing modem...");
-  modem.restart();
-
+  
+  //modem.restart();
+  modem.init();
+  
   String modemInfo = modem.getModemInfo();
   if (modemInfo == "") {
     SerialMon.println(" fail");
@@ -85,7 +87,10 @@ void setup() {
     SerialMon.println(" OK");
   }
   SerialMon.println("Modem: " + modemInfo);
-
+//
+//  delay(1000);
+//  resetFunc();
+  
   SerialMon.print("Bringing up network...");
   if (!modem.waitForNetwork()) {
     SerialMon.println(" fail");
