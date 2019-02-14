@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import socket
 import signal
@@ -49,7 +49,6 @@ class deactivate_relay_timer(Thread):
             relay_state = '0'
             stopFlag2.set()
 
-
 # connect the client
 client.connect(('home.zachrisson.info', 6666))
 
@@ -61,7 +60,9 @@ t2 = deactivate_relay_timer(stopFlag2)
 client.send(relay_state)
 
 while True:
-    response = client.recv(1)
+    response = client.recv(1024)
+    if not response:
+        continue
 
     if response[0] == '0':
         relay_state = '0'
@@ -70,3 +71,5 @@ while True:
         print 'Turning on relay'
         relay_state = '1'
         t2.start()
+    else:
+        print response
