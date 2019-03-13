@@ -18,7 +18,7 @@ heartbeat_interval = 65.0
 
 parser = argparse.ArgumentParser(description = 'Control server')
 parser.add_argument('--heartbeat_interval', '-i', dest = 'heartbeat_interval', default = 65.0, help = 'Expected heartbeat interval')
-parser.add_argument('--mqtt_server_name', '-ms', dest = 'mqtt_server_name', default = 'phobos', help = 'MQTT server to connect to')
+parser.add_argument('--mqtt_server_name', '-ms', dest = 'mqtt_server_name', default = 'mercury', help = 'MQTT server to connect to')
 parser.add_argument('--mqtt_server_port', '-mp', dest = 'mqtt_server_port', default = 1883, help = 'MQTT server port to connect to')
 parser.add_argument('--server_port', '-sp', dest = 'server_port', default = 6666, help = 'Server port')
 parser.add_argument('--server_host', '-sh', dest = 'server_host', default = '', help = 'Server host')
