@@ -15,7 +15,6 @@ from threading import Timer
 topic = "GSMHeater/ctrl"
 available_topic = "GSMHeater/available"
 state_topic = "GSMHeater/state"
-heartbeat_interval = 65.0
 
 parser = argparse.ArgumentParser(description = 'Control server')
 parser.add_argument('--heartbeat_interval', '-i', dest = 'heartbeat_interval', default = 65.0, help = 'Expected heartbeat interval')
@@ -27,10 +26,11 @@ parser.add_argument('--server_host', '-sh', dest = 'server_host', default = '', 
 args = parser.parse_args()
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 try:
     s.bind((args.server_host, args.server_port))
-except:
-    print('Bind failed')
+except Exception as e:
+    print('Bind failed', e)
     sys.exit()
 
 s.listen(1)
@@ -68,7 +68,7 @@ def client_thread(conn):
     #Sending message to connected client
     #conn.send(b'Welcome\n') #send only takes string
 
-    t = Timer(heartbeat_interval, conn_timeout)
+    t = Timer(int(args.heartbeat_interval), conn_timeout)
     # infinite loop so that function do not terminate and thread do not end.
     while True:
         # Receiving from client
@@ -87,7 +87,7 @@ def client_thread(conn):
             # FIXME: Later we can use this to inform our switch trigger what the current state is
             print ('Starting timeout timer')
             t.cancel();
-            t = Timer(args.heartbeat_interval, conn_timeout)
+            t = Timer(int(args.heartbeat_interval), conn_timeout)
             client.publish(state_topic, data_str)
             client.publish(available_topic, 'online')
             t.start()
