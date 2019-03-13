@@ -35,9 +35,11 @@ const int port = 6666;
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
 
-void(* resetFunc) (void) = 0; //declare reset function @ address 0
+//declare reset function @ address 0
+void(* resetFunc) (void) = 0;
 
 void gprsPowerUp(void) {
+  SerialMon.println("Powering up modem");
   digitalWrite(GPRS_SHIELD_POWER_PIN, HIGH);
   delay(1000);
   digitalWrite(GPRS_SHIELD_POWER_PIN, LOW);
@@ -45,12 +47,13 @@ void gprsPowerUp(void) {
 }
 
 void gprsPowerDown(void) {
+  SerialMon.println("Powering down modem");
   modem.poweroff();
   delay(5000);
 }
 
 void setup() {
-  pinMode(LED_PIN, OUTPUT);
+  //pinMode(LED_PIN, OUTPUT);
   pinMode(GPRS_SHIELD_POWER_PIN, OUTPUT); 
   pinMode(RELAY_PIN, OUTPUT);
 
@@ -64,23 +67,34 @@ void setup() {
 
   SerialMon.println("\nInitializing GPRS Shield...");
   gprsPowerDown();
+ 
   /* Must have shorted R13 on board to make this work */
   gprsPowerUp();    
 
   // Restart takes quite some time
   // FIXME: To skip it, call init() instead of restart()
-  SerialMon.println("Initializing modem...");
-  modem.restart();
-
+  SerialMon.print("Initializing modem...");
+  
+  //modem.restart();
+  modem.init();
+  
   String modemInfo = modem.getModemInfo();
-
+  if (modemInfo == "") {
+    SerialMon.println(" fail");
+    delay(1000);
+    resetFunc();
+  } else {
+    SerialMon.println(" OK");
+  }
   SerialMon.println("Modem: " + modemInfo);
-
-  SerialMon.print("Waiting for network...");
+//
+//  delay(1000);
+//  resetFunc();
+  
+  SerialMon.print("Bringing up network...");
   if (!modem.waitForNetwork()) {
     SerialMon.println(" fail");
     delay(1000);
-
     resetFunc();
   }
   SerialMon.println(" OK");
@@ -90,7 +104,6 @@ void setup() {
   if (!modem.gprsConnect(apn, user, pass)) {
     SerialMon.println(" fail");
     delay(1000);
-
     resetFunc();
   }
   SerialMon.println(" OK");
@@ -98,12 +111,15 @@ void setup() {
 
 void loop() {
   if (client.connected() == false) {
-    if (!client.connect(server, port)) {
+    if (client.connect(server, port) == false) {
       SerialMon.println("Failed to connect to server, rebooting");
       delay(1000);
       resetFunc();
     } else {
-      SerialMon.println("Connected to server");
+      SerialMon.print("Connected to ");
+      SerialMon.print(server);
+      SerialMon.print(":");
+      SerialMon.println(port);
     }
   }
 
@@ -139,7 +155,7 @@ void loop() {
       } else if (c == '0') {
         SerialMon.println("Turning off relay");
         digitalWrite(RELAY_PIN, LOW);
-      }      
+      }
       timeout = millis();
     }
   }
